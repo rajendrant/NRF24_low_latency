@@ -1,0 +1,2 @@
+NRF24    KEYWORD1
+fast write    KEYWORD1
