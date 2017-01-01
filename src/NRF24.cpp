@@ -15,6 +15,8 @@ NRF24::NRF24(uint8_t chipEnablePin)
 {
     _configuration = NRF24_EN_CRC; // Default: 1 byte CRC enabled
     _chipEnablePin = chipEnablePin;
+    _address_width = 0; // Invalid address width.
+    _broadcast_address[0] = 0;
 }
 
 boolean NRF24::init()
@@ -52,7 +54,7 @@ boolean NRF24::init()
     flushTx();
     flushRx();
 
-    return powerUpRx();
+    return true;
 }
 
 // Low level commands for interfacing with the device
@@ -149,36 +151,56 @@ boolean NRF24::setConfiguration(uint8_t configuration)
     _configuration = configuration;
 }
 
-boolean NRF24::setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len)
-{
-  if (len < 3 || len > 5)
-    return false;
-
-  spiWriteRegister(NRF24_REG_03_SETUP_AW, len-2);
-  spiBurstWriteRegister(NRF24_REG_0A_RX_ADDR_P0 + pipe, address, len);
-  return true;
-}
-
 boolean NRF24::setRetry(uint8_t delay, uint8_t count)
 {
     spiWriteRegister(NRF24_REG_04_SETUP_RETR, ((delay << 4) & NRF24_ARD) | (count & NRF24_ARC));
     return true;
 }
 
-boolean NRF24::setThisAddress(uint8_t* address, uint8_t len)
+bool NRF24::setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len)
+{
+  if (len < 3 || len > 5)
+    return false;
+
+  if (_address_width!=0 && _address_width!=len)
+    return false;
+
+  _address_width = len;
+  spiWriteRegister(NRF24_REG_03_SETUP_AW, len-2);
+  spiBurstWriteRegister(NRF24_REG_0A_RX_ADDR_P0 + pipe, address, len);
+  return true;
+}
+
+bool NRF24::setThisAddress(uint8_t* address, uint8_t len)
 {
   // Set pipe 1 for this address
   // RX_ADDR_P2 is set to RX_ADDR_P1 with the LSbyte set to 0xff, for use as a broadcast address
   return setPipeAddress(1, address, len); 
 }
 
-boolean NRF24::setTransmitAddress(uint8_t* address, uint8_t len)
-{
+bool NRF24::setBroadcastAddress(uint8_t *address, uint8_t len) {
   if (len < 3 || len > 5)
     return false;
 
-  // Set both TX_ADDR and RX_ADDR_P0 for auto-ack with Enhanced shockwave
-  spiWriteRegister(NRF24_REG_03_SETUP_AW, len-2);
+  if (_address_width!=0 && _address_width!=len)
+    return false;
+
+  // P0 is used to recv from broadcast_address. But in TX mode, P0 needs to be set as Transmit
+  // address for auto-acking packets. So P0 needs to be used interchangably. When switching to RX
+  // mode P0 is set as broadcast_address in powerUpRx(). When switching to TX mode, P0 is set as
+  // Transmit address in setTransmitAddress().
+  _address_width = len;
+  memcpy(_broadcast_address, address, _address_width);
+
+  return true;
+}
+
+bool NRF24::setTransmitAddress(uint8_t* address, uint8_t len)
+{
+  if (_address_width!=len)
+    return false;
+
+  // Set both TX_ADDR and RX_ADDR_P0 for auto-ack with Enhanced shockwave.
   spiBurstWriteRegister(NRF24_REG_0A_RX_ADDR_P0, address, len);
   spiBurstWriteRegister(NRF24_REG_10_TX_ADDR, address, len);
   return true;
@@ -241,6 +263,11 @@ boolean NRF24::powerUpRx()
 {
   if (_mode != RX) {
     boolean status = spiWriteRegister(NRF24_REG_00_CONFIG, _configuration | NRF24_PWR_UP | NRF24_PRIM_RX);
+
+    // When switching to RX mode, P0 is set as broadcast_address.
+    if(_broadcast_address[0])
+      spiBurstWriteRegister(NRF24_REG_0A_RX_ADDR_P0, _broadcast_address, _address_width);
+
     digitalWrite(_chipEnablePin, HIGH);
     _mode = RX;
     return status;
@@ -274,13 +301,6 @@ bool NRF24::sendNoAck(uint8_t* data, uint8_t len)
     // To achieve low latency, this mode does not do additional checking
     // powerUpTx() should be called before calling this.
     //powerUpTx();
-    /*while (((status = statusRead()) & NRF24_STATUS_TX_FULL)) {
-      if (status & NRF24_MAX_RT) {
-        spiWriteRegister(NRF24_REG_07_STATUS, NRF24_MAX_RT);
-        flushTx();
-        return false;
-      }
-      }*/
     spiBurstWrite(NRF24_COMMAND_W_TX_PAYLOAD_NOACK, data, len);
     // Radio will return to Standby II mode after transmission is complete
     return true;

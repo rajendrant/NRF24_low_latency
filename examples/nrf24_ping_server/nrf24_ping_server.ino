@@ -9,16 +9,12 @@ void setup()
     Serial.println("NRF24 init failed");
  if (!nrf24.setChannel(1))
     Serial.println("setChannel failed");
-  if (!nrf24.setThisAddress((uint8_t*)"s-1", 3))
+  if (!nrf24.setThisAddress((uint8_t*)"n-s", 3))
     Serial.println("setThisAddress failed");
-  if (!nrf24.setTransmitAddress((uint8_t*)"s-1", 3))
+  if (!nrf24.setTransmitAddress((uint8_t*)"n-c", 3))
    Serial.println("setTransmitAddress failed");
   if (!nrf24.setRF(NRF24::NRF24DataRate2Mbps, NRF24::NRF24TransmitPowerm18dBm))
     Serial.println("setRF failed");
-
-  // Dynamic payload mode.
-  if (!nrf24.setDynamicPayloadMode())
-    Serial.println("setDynamicPayloadMode failed");
 
   Serial.println("initialised");
 }

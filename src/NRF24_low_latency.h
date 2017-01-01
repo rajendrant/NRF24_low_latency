@@ -566,16 +566,6 @@ public:
     /// \return true on success
     boolean setConfiguration(uint8_t configuration);
 
-    /// Sets the first len bytes of the address for the given NRF24 receiver pipe
-    /// This is an internal function and is not normally used by appications, but
-    /// can be used for specialised applications.
-    /// \param[in] pipe The index of the pipe to set, from 0 to 5
-    /// \param[in] address The new address for receiving. Must match the transmit address 
-    /// of the transmitting node
-    /// \param[in] len Number of bytes of receive address to set.
-    /// \return true on success
-    boolean setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len);
-
     /// Set the Auto Retransmit Delay and Auto Retransmit Count
     /// for Auto retransmission (ART). See section 7.4.2 in the NRF24 documentation
     /// It may be very important to set an appropriate delay and count
@@ -587,19 +577,31 @@ public:
     /// \return true on success
     boolean setRetry(uint8_t delay, uint8_t count = 3);
 
+    /// Sets the first len bytes of the address for the given NRF24 receiver pipe
+    /// This is an internal function and is not normally used by appications, but
+    /// can be used for specialised applications.
+    /// \param[in] pipe The index of the pipe to set, from 0 to 5
+    /// \param[in] address The new address for receiving. Must match the transmit address 
+    /// of the transmitting node
+    /// \param[in] len Number of bytes of receive address to set.
+    /// \return true on success
+    bool setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len);
+
     /// Sets the first len bytes of the address of this node
     /// Normally len is the same length as setAddressLength, but can be smaller in order to set the
     /// least significant bytes of the address
     /// \param[in] address The new address for receiving. Must match the setTransmitAddress of the transmitting node.
     /// \param[in] len Number of bytes of receive address to set.
     /// \return true on success
-    boolean setThisAddress(uint8_t* address, uint8_t len);
+    bool setThisAddress(uint8_t* address, uint8_t len);
 
     /// Sets the next transmit address
     /// \param[in] address The new address for transmitting. Must match the setThisAddress of the receiving node.
     /// \param[in] len Number of bytes of receive address to set.
     /// \return true on success
-    boolean setTransmitAddress(uint8_t* address, uint8_t len);
+    bool setTransmitAddress(uint8_t* address, uint8_t len);
+
+    bool setBroadcastAddress(uint8_t *address, uint8_t len);
 
     /// Sets the number of bytes transmitted 
     /// in each payload
@@ -692,6 +694,8 @@ private:
     uint8_t             _chipEnablePin;
     uint8_t             _chipSelectPin;
     Mode                _mode;
+    uint8_t             _broadcast_address[5];
+    uint8_t             _address_width;
 };
 
 /// @example nrf24_audio_rx.pde

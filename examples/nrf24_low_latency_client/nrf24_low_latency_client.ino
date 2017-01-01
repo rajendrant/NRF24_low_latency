@@ -9,10 +9,10 @@ void setup()
     Serial.println("NRF24 init failed");
   if (!nrf24.setChannel(76))
     Serial.println("setChannel failed");
-  if (!nrf24.setThisAddress((uint8_t*)"s-1", 3))
+  if (!nrf24.setThisAddress((uint8_t*)"n-c", 3))
     Serial.println("setThisAddress failed");
-  if (!nrf24.setTransmitAddress((uint8_t*)"s-1", 3))
-    Serial.println("setTransmitAddress failed");
+  if (!nrf24.setBroadcastAddress((uint8_t*)"mux", 3))
+    Serial.println("setBroadcastAddress failed");
   if (!nrf24.setRF(NRF24::NRF24DataRate2Mbps, NRF24::NRF24TransmitPowerm18dBm))
     Serial.println("setRF failed");
 
@@ -28,8 +28,7 @@ void loop()
   uint16_t sent_count = 0;
   uint16_t recv_count = 0;
 
-  // Static payload mode is needed to send packets with NO ACK.
-  nrf24.setStaticPayloadMode(1);
+  nrf24.setTransmitAddress((uint8_t*)"mux", 3);
   
   // To achieve low latency, powerup TX should be called separately.
   nrf24.powerUpTx();
@@ -50,11 +49,9 @@ void loop()
       Serial.println("waitPacketSent failed");
   }
 
-  // Dynamic payload mode for receiving the result in ACK mode.
-  nrf24.setDynamicPayloadMode();
   nrf24.powerUpRx();
   if (!nrf24.waitAndRecv((uint8_t*)&recv_count, 400))
-      Serial.println("fail");
+      Serial.println("recv fail");
 
   Serial.println("Result");
   Serial.print("Sent packets: ");
