@@ -594,6 +594,7 @@ public:
     /// \param[in] len Number of bytes of receive address to set.
     /// \return true on success
     bool setThisAddress(uint8_t* address, uint8_t len);
+    bool getThisAddress(uint8_t* address, uint8_t len);
 
     /// Sets the next transmit address
     /// \param[in] address The new address for transmitting. Must match the setThisAddress of the receiving node.
@@ -692,7 +693,6 @@ protected:
 private:
     uint8_t             _configuration;
     uint8_t             _chipEnablePin;
-    uint8_t             _chipSelectPin;
     Mode                _mode;
     uint8_t             _broadcast_address[5];
     uint8_t             _address_width;

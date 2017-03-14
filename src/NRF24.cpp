@@ -6,10 +6,26 @@
 #include "NRF24_low_latency.h"
 #include <SPI.h>
 
+#ifdef ESP8266
+struct DigitalPin {
+  DigitalPin(uint8_t pin) : pin(pin) {
+    pinMode(pin, OUTPUT);
+  }
+  void low() {
+    digitalWrite(pin, LOW);
+  }
+  void high() {
+    digitalWrite(pin, HIGH);
+  }
+  uint8_t pin;
+} chipSelectPin(5);
+#else
+
 // Uses the DigitalIO library from https://github.com/greiman/DigitalIO/
 #include "DigitalPin.h"
 
 DigitalPin<SS> chipSelectPin;
+#endif
 
 NRF24::NRF24(uint8_t chipEnablePin)
 {
@@ -24,8 +40,6 @@ boolean NRF24::init()
     // Initialise the slave select pin
     pinMode(_chipEnablePin, OUTPUT);
     digitalWrite(_chipEnablePin, LOW);
-    pinMode(_chipSelectPin, OUTPUT);
-    digitalWrite(_chipSelectPin, HIGH);
   
     // Added code to initilize the SPI interface and wait 100 ms
     // to allow NRF24 device to "settle".  100 ms may be overkill.
@@ -176,6 +190,14 @@ bool NRF24::setThisAddress(uint8_t* address, uint8_t len)
   // Set pipe 1 for this address
   // RX_ADDR_P2 is set to RX_ADDR_P1 with the LSbyte set to 0xff, for use as a broadcast address
   return setPipeAddress(1, address, len); 
+}
+
+bool NRF24::getThisAddress(uint8_t* address, uint8_t len)
+{
+  if (len-2 != spiReadRegister(NRF24_REG_03_SETUP_AW))
+    return false;
+  spiBurstReadRegister(NRF24_REG_0B_RX_ADDR_P1, address, len);
+  return true;
 }
 
 bool NRF24::setBroadcastAddress(uint8_t *address, uint8_t len) {
