@@ -99,22 +99,24 @@ uint8_t NRF24::spiWrite(uint8_t command, uint8_t val)
     return status;
 }
 
-void NRF24::spiBurstRead(uint8_t command, uint8_t* dest, uint8_t len)
+void NRF24::spiBurstRead(uint8_t command, void* dest, uint8_t len)
 {
+    uint8_t *dest_ = (uint8_t*)dest;
     chipSelectPin.low();
     SPI.transfer(command); // Send the start address, discard status
     while (len--)
-	*dest++ = SPI.transfer(0); // The MOSI value is ignored, value is read
+        *dest_++ = SPI.transfer(0); // The MOSI value is ignored, value is read
     chipSelectPin.high();
     // 300 microsecs for 32 octet payload
 }
 
-uint8_t NRF24::spiBurstWrite(uint8_t command, uint8_t* src, uint8_t len)
+uint8_t NRF24::spiBurstWrite(uint8_t command, const void* src, uint8_t len)
 {
+    const uint8_t *src_ = (const uint8_t*)src;
     chipSelectPin.low();
     uint8_t status = SPI.transfer(command);
     while (len--)
-	SPI.transfer(*src++);
+        SPI.transfer(*src_++);
     chipSelectPin.high();
     return status;
 }
@@ -130,12 +132,12 @@ uint8_t NRF24::spiWriteRegister(uint8_t reg, uint8_t val)
     return spiWrite((reg & NRF24_REGISTER_MASK) | NRF24_COMMAND_W_REGISTER, val);
 }
 
-void NRF24::spiBurstReadRegister(uint8_t reg, uint8_t* dest, uint8_t len)
+void NRF24::spiBurstReadRegister(uint8_t reg, void* dest, uint8_t len)
 {
     return spiBurstRead((reg & NRF24_REGISTER_MASK) | NRF24_COMMAND_R_REGISTER, dest, len);
 }
 
-uint8_t NRF24::spiBurstWriteRegister(uint8_t reg, uint8_t* src, uint8_t len)
+uint8_t NRF24::spiBurstWriteRegister(uint8_t reg, const void* src, uint8_t len)
 {
     return spiBurstWrite((reg & NRF24_REGISTER_MASK) | NRF24_COMMAND_W_REGISTER, src, len);
 }
@@ -171,7 +173,7 @@ boolean NRF24::setRetry(uint8_t delay, uint8_t count)
     return true;
 }
 
-bool NRF24::setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len)
+bool NRF24::setPipeAddress(uint8_t pipe, const void* address, uint8_t len)
 {
   if (len < 3 || len > 5)
     return false;
@@ -185,14 +187,14 @@ bool NRF24::setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len)
   return true;
 }
 
-bool NRF24::setThisAddress(uint8_t* address, uint8_t len)
+bool NRF24::setThisAddress(const void* address, uint8_t len)
 {
   // Set pipe 1 for this address
   // RX_ADDR_P2 is set to RX_ADDR_P1 with the LSbyte set to 0xff, for use as a broadcast address
   return setPipeAddress(1, address, len); 
 }
 
-bool NRF24::getThisAddress(uint8_t* address, uint8_t len)
+bool NRF24::getThisAddress(void* address, uint8_t len)
 {
   if (len-2 != spiReadRegister(NRF24_REG_03_SETUP_AW))
     return false;
@@ -200,7 +202,7 @@ bool NRF24::getThisAddress(uint8_t* address, uint8_t len)
   return true;
 }
 
-bool NRF24::setBroadcastAddress(uint8_t *address, uint8_t len) {
+bool NRF24::setBroadcastAddress(const void* address, uint8_t len) {
   if (len < 3 || len > 5)
     return false;
 
@@ -217,7 +219,7 @@ bool NRF24::setBroadcastAddress(uint8_t *address, uint8_t len) {
   return true;
 }
 
-bool NRF24::setTransmitAddress(uint8_t* address, uint8_t len)
+bool NRF24::setTransmitAddress(const void* address, uint8_t len)
 {
   if (_address_width!=len)
     return false;
@@ -310,14 +312,14 @@ boolean NRF24::powerUpTx()
   return true;
 }
 
-bool NRF24::sendBlocking(uint8_t* data, uint8_t len) {
+bool NRF24::sendBlocking(const void* data, uint8_t len) {
   powerUpTx();
   spiBurstWrite(NRF24_COMMAND_W_TX_PAYLOAD, data, len);
   // Radio will return to Standby II mode after transmission is complete
   return waitPacketSent();
 }
 
-bool NRF24::sendNoAck(uint8_t* data, uint8_t len)
+bool NRF24::sendNoAck(const void* data, uint8_t len)
 {
     uint8_t status;
     // To achieve low latency, this mode does not do additional checking
@@ -338,7 +340,7 @@ boolean NRF24::waitPacketSent()
     // end of transmission
     uint8_t status;
     uint32_t start = millis();
-    while (!((status = statusRead()) & (NRF24_TX_DS | NRF24_MAX_RT)) && millis()-start < 4)
+    while (!((status = statusRead()) & (NRF24_TX_DS | NRF24_MAX_RT)) && millis()-start <= 4)
 	;
 
     // Must clear NRF24_MAX_RT if it is set, else no further comm

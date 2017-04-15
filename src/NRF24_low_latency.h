@@ -506,14 +506,14 @@ public:
     /// \param[in] dest Array to write the bytes returned by the command to. Must be at least len bytes
     /// \param[in] len Number of bytes to read
     /// \return the value of the device status register
-    void           spiBurstRead(uint8_t command, uint8_t* dest, uint8_t len);
+    void           spiBurstRead(uint8_t command, void* dest, uint8_t len);
 
     /// Write a number of consecutive bytes to a command using burst write mode
     /// \param[in] command Command number of the first register, one of NRF24_COMMAND_*
     /// \param[in] src Array of bytes to write. Must be at least len bytes
     /// \param[in] len Number of bytes to write
     /// \return the value of the device status register
-    uint8_t        spiBurstWrite(uint8_t command, uint8_t* src, uint8_t len);
+    uint8_t        spiBurstWrite(uint8_t command, const void* src, uint8_t len);
 
     /// Reads a single register from the NRF24
     /// \param[in] reg Register number, one of NRF24_REG_*
@@ -531,14 +531,14 @@ public:
     /// \param[in] dest Array to write the register values to. Must be at least len bytes
     /// \param[in] len Number of bytes to read
     /// \return the value of the device status register
-    void           spiBurstReadRegister(uint8_t reg, uint8_t* dest, uint8_t len);
+    void           spiBurstReadRegister(uint8_t reg, void* dest, uint8_t len);
 
     /// Write a number of consecutive registers using burst write mode
     /// \param[in] reg Register number of the first register, one of NRF24_REG_*
     /// \param[in] src Array of new register values to write. Must be at least len bytes
     /// \param[in] len Number of bytes to write
     /// \return the value of the device status register
-    uint8_t        spiBurstWriteRegister(uint8_t reg, uint8_t* src, uint8_t len);
+    uint8_t        spiBurstWriteRegister(uint8_t reg, const void* src, uint8_t len);
 
     /// Reads and returns the device status register NRF24_REG_02_DEVICE_STATUS
     /// \return The value of the device status register
@@ -585,7 +585,7 @@ public:
     /// of the transmitting node
     /// \param[in] len Number of bytes of receive address to set.
     /// \return true on success
-    bool setPipeAddress(uint8_t pipe, uint8_t* address, uint8_t len);
+    bool setPipeAddress(uint8_t pipe, const void* address, uint8_t len);
 
     /// Sets the first len bytes of the address of this node
     /// Normally len is the same length as setAddressLength, but can be smaller in order to set the
@@ -593,16 +593,16 @@ public:
     /// \param[in] address The new address for receiving. Must match the setTransmitAddress of the transmitting node.
     /// \param[in] len Number of bytes of receive address to set.
     /// \return true on success
-    bool setThisAddress(uint8_t* address, uint8_t len);
-    bool getThisAddress(uint8_t* address, uint8_t len);
+    bool setThisAddress(const void* address, uint8_t len);
+    bool getThisAddress(void* address, uint8_t len);
 
     /// Sets the next transmit address
     /// \param[in] address The new address for transmitting. Must match the setThisAddress of the receiving node.
     /// \param[in] len Number of bytes of receive address to set.
     /// \return true on success
-    bool setTransmitAddress(uint8_t* address, uint8_t len);
+    bool setTransmitAddress(const void* address, uint8_t len);
 
-    bool setBroadcastAddress(uint8_t *address, uint8_t len);
+    bool setBroadcastAddress(const void *address, uint8_t len);
 
     /// Sets the number of bytes transmitted 
     /// in each payload
@@ -641,8 +641,8 @@ public:
     /// \param [in] noack Optional parameter if true sends the message NOACK mode. Requires that the NOACK feature be 
     ///  enabled with spiWriteRegister(NRF24_REG_1D_FEATURE, NRF24_EN_DYN_ACK);
     /// \return true on success
-    bool sendBlocking(uint8_t* data, uint8_t len);
-    bool sendNoAck(uint8_t* data, uint8_t len);
+    bool sendBlocking(const void* data, uint8_t len);
+    bool sendNoAck(const void* data, uint8_t len);
     
     /// Blocks until the current message (if any) 
     /// has been transmitted
